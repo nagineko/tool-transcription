@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    env_file:
+      - ./nextjs/.env
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro # 設定ファイルをマウント
+      - ./nginx/certs:/etc/nginx/certs:ro   # 証明書をマウント
+    depends_on:
+      - app

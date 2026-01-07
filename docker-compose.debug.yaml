@@ -1,0 +1,28 @@
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "cd nextjs && npm run dev"
+    environment:
+      - WATCHPACK_POLLING=true
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./nextjs/.env.local
+    volumes:
+      - .:/app                   # プロジェクト丸ごとマウント（コード変更が即反映）
+      - /app/nextjs/node_modules # コンテナ内の node_modules をローカルで上書きさせない
+    develop:
+      watch:
+        - action: sync
+          path: ./nextjs
+          target: /app/nextjs
+          ignore:
+            - node_modules
+        - action: sync
+          path: ./whisper
+          target: /app/whisper
+        - action: rebuild
+          path: package.json # package.jsonが変わった時だけ再ビルド
+    

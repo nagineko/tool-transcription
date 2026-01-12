@@ -1,8 +1,41 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { useState } from "react";
+import { startTranscription } from "./actions";
 
 export default function Home() {
   const { data: session } = useSession();
+
+  // --- Hooks は必ず関数の最初、if文より前に書く ---
+  const [url, setUrl] = useState("");
+  const [result, setResult] = useState("");
+  const [debugLog, setDebugLog] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleStart = async () => {
+    if (!url) return alert("URLを入力してください");
+    
+    setLoading(true);
+    setResult("");
+    setDebugLog(""); 
+    
+    try {
+      const res = await startTranscription(url);
+      
+      // ログは成否に関わらずセットする
+      if (res.debug) setDebugLog(res.debug);
+
+      if (res.success) {
+        setResult(res.content || "中身が空でした");
+      } else {
+        setResult("エラーが発生しました。下のデバッグログを確認してください。");
+      }
+    } catch (err) {
+      setResult("通信エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 1. まだログインしていない場合
   if (!session) {
@@ -33,7 +66,7 @@ export default function Home() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-bold">YouTube文字起こし</h1>
+        <h1 className="text-xl font-bold">YouTube文字起こしツール</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">{session.user?.email}</span>
           <button
@@ -45,19 +78,64 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-        <p className="mb-4 text-gray-700">YouTubeのURLを入力してください：</p>
+      {/* 入力エリア（上の白いウィンドウ） */}
+      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+        <p className="mb-4 text-gray-700 font-medium">YouTubeのURLを入力してください：</p>
         <div className="flex gap-2">
           <input 
             type="text" 
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=..." 
-            className="flex-1 p-2 border rounded shadow-sm text-black"
+            className="flex-1 p-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
-          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            解析開始
+          <button 
+            onClick={handleStart}
+            disabled={loading}
+            className={`px-6 py-2 text-white font-bold rounded-lg transition-all ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+            }`}
+          >
+            {loading ? "解析中..." : "解析開始"}
           </button>
         </div>
       </div>
+
+      {/* 結果表示エリア（下の白いウィンドウ） */}
+      {(result || loading) && (
+        <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 min-h-[300px] relative">
+          
+          {/* コピーボタン：結果がある時だけ右上に表示 */}
+          {result && !loading && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(result);
+                // 簡易的な通知としてアラートを出すか、状態を変えてアイコンを変えるのが一般的
+                alert("クリップボードにコピーしました");
+              }}
+              className="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all border border-gray-200 shadow-sm flex items-center gap-2 text-sm bg-white"
+              title="全内容をコピー"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              コピー
+            </button>
+          )}
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full py-20">
+              <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+              <p className="text-gray-500 font-medium">AIが音声を解析しています。数分かかる場合があります...</p>
+            </div>
+          ) : (
+            <div className="whitespace-pre-wrap text-black font-sans text-base leading-relaxed pr-10">
+              {result}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

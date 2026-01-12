@@ -123,8 +123,8 @@ npx create-next-app@latest . --typescript --tailwind --eslint
 ### Usage
 ```sh
 cd ~/tool-transcription
-docker compose -f docker-compose.debug.yaml watch
 code .
+docker compose -f docker-compose.debug.yaml watch
 ```
 
 ```sh

@@ -1,0 +1,69 @@
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "cd nextjs && npm run dev -- -H 0.0.0.0"
+    environment:
+      - WATCHPACK_POLLING=true
+      # --- HTTPS化のための追加設定 ---
+      - VIRTUAL_HOST=ultive.info
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=ultive.info
+      - LETSENCRYPT_EMAIL=narurunne@gmail.com
+    env_file:
+      - ./nextjs/.env
+    volumes:
+      - .:/app                   # プロジェクト丸ごとマウント（コード変更が即反映）
+      - /app/nextjs/node_modules # コンテナ内の node_modules をローカルで上書きさせない
+    develop:
+      watch:
+        - action: sync
+          path: ./nextjs
+          target: /app/nextjs
+          ignore:
+            - node_modules
+        - action: sync
+          path: ./whisper
+          target: /app/whisper
+        - action: rebuild
+          path: package.json # package.jsonが変わった時だけ再ビルド
+
+  # --- SSL証明書の自動取得・更新を行う窓口 (Nginx) ---
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    labels:
+      # acme-companionが見つけられるようにラベルを追加
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+    restart: always
+
+  # --- 証明書の発行・更新を裏でやるコンパニオン ---
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+    environment:
+      # nginx-proxyを見つけやすくするために環境変数を明示
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+      - DEFAULT_EMAIL=narurunne@gmail.com # あなたのメールアドレスに変更
+    depends_on:
+      - nginx-proxy
+    restart: always
+
+volumes:
+  certs:
+  vhost:
+  html:

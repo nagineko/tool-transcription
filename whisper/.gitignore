@@ -1,0 +1,6 @@
+__pycache__/
+.env
+output/
+youtube.list
+debug_python.log
+youtube_cookies.txt

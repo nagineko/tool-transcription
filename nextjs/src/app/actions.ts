@@ -1,5 +1,7 @@
 "use server";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
@@ -8,6 +10,13 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 export async function startTranscription(youtubeUrl: string) {
+  // --- ここが最重要！サーバーサイドでセッションを確認 ---
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    throw new Error("認証が必要です。");
+    // または return { success: false, error: "Unauthorized" };
+  }
   // パス設定（絶対パス）
   const PROJECT_ROOT = "/app";
   const WHISPER_DIR = path.join(PROJECT_ROOT, "whisper");

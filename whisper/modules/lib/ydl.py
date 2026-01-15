@@ -1,7 +1,10 @@
 from yt_dlp import YoutubeDL
 import io
 import subprocess
-
+import os
+cookie_file = 'youtube_cookies.txt'
+print(f"DEBUG: Cookie file path: {os.path.abspath(cookie_file)}")
+print(f"DEBUG: Cookie file exists: {os.path.isfile(cookie_file)}")
 def download_as_stream(url):
     # Cookieファイルのパス（絶対パスにするのが安全）
     cookie_path = 'youtube_cookies.txt'

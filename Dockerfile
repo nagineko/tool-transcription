@@ -5,10 +5,10 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     curl \
+    ffmpeg \
     && apt-get clean
 
 WORKDIR /app
-RUN apt-get update && apt-get install -y nodejs
 # Pythonの依存関係をインストール
 COPY whisper/requirements.txt ./whisper/
 RUN pip3 install --no-cache-dir -r ./whisper/requirements.txt --break-system-packages

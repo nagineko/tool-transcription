@@ -105,8 +105,9 @@ sudo docker compose up -d --build
 
 ### EC2アプリケーションコード更新方法
 ```sh
+sudo docker system df
 sudo docker system prune --volumes
-sudo rm -f ~/app
+sudo rm -rf ~/app
 git clone git@github.com:nagineko/tool-transcription.git .
 mkdir -p ~/app/whisper/output
 cat <<EOT > nextjs/.env

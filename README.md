@@ -103,6 +103,24 @@ sudo docker compose up -d --build
 # youtube_cookies.txtをwhisper/modules/libに配置
 ```
 
+### EC2アプリケーションコード更新方法
+```sh
+sudo docker system prune --volumes
+sudo rm -f ~/app
+git clone git@github.com:nagineko/tool-transcription.git .
+mkdir -p ~/app/whisper/output
+cat <<EOT > nextjs/.env
+GOOGLE_CLIENT_ID="<GOOGLE_CLIENT_ID>"
+GOOGLE_CLIENT_SECRET="<GOOGLE_CLIENT_SECRET>"
+NEXTAUTH_URL=https://ultive.info
+NEXTAUTH_SECRET=$(openssl rand -base64 32)
+WHISPER_API_KEY="<WHISPER_API_KEY>"
+GEMINI_API_KEY="<GEMINI_API_KEY>"
+ALLOWED_EMAILS="<ALLOWED_EMAILS(test1@exaqmple.com,test2@example.com)>"
+EOT
+```
+
+
 ```sh
 terraform destroy --auto-approve
 ```

@@ -12,7 +12,15 @@ def download_as_stream(url):
     ydl_opts = {
         'format': 'bestaudio/best',
         'quiet': True,
-        'cookiefile': cookie_path,
+        'no_cookies': True,           # --no-cookies
+        'ignoreconfig': True,          # --ignore-config
+        'extractor_args': {            # --extractor-args "youtube:player_client=android"
+            'youtube': ['player_client=android']
+        },
+        'nocheckcertificate': True,
+        # 'cookiefile': cookie_path,
+        # 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        # 'nocheckcertificate': True,
     }
 
     # 1. メタデータのみ取得
@@ -23,7 +31,12 @@ def download_as_stream(url):
     # 外部コマンドとして実行することで、確実にバイナリをキャプチャします
     command = [
         'yt-dlp',
-        '--cookies', cookie_path,
+        '--no-cookies',                # Cookieを使わない
+        '--ignore-config',             # 設定ファイルを無視
+        '--extractor-args', 'youtube:player_client=android',
+        # '--cookies', cookie_path,
+        # '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        # '--impersonate', 'chrome',
         '-x',                          # 音声のみ抽出
         '--audio-format', 'mp3',       # mp3に変換
         '--audio-quality', '0',        # 高音質

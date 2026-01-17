@@ -41,7 +41,7 @@ export default function Home() {
   if (!session) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8f9fa]">
-        <h1 className="text-2xl font-bold mb-8 text-gray-800">YouTube文字起こしツール</h1>
+        <h1 className="text-2xl font-bold mb-8 text-gray-800">テールシステム</h1>
         
         {/* Google公式デザイン風ボタン */}
         <button
@@ -66,7 +66,7 @@ export default function Home() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-bold">YouTube文字起こしツール</h1>
+        <h1 className="text-xl font-bold">テールシステム</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">{session.user?.email}</span>
           <button
@@ -80,13 +80,13 @@ export default function Home() {
 
       {/* 入力エリア（上の白いウィンドウ） */}
       <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
-        <p className="mb-4 text-gray-700 font-medium">YouTubeのURLを入力してください：</p>
+        <p className="mb-4 text-gray-700 font-medium">URLを入力してください：</p>
         <div className="flex gap-2">
           <input 
             type="text" 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=..." 
+            placeholder="https://..." 
             className="flex-1 p-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           <button 

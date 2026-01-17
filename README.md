@@ -91,7 +91,8 @@ sudo mkdir -p /usr/local/lib/docker/cli-plugins/
 # 6. 先ほどダウンロードしたファイルを共通場所にコピー
 sudo cp ~/.docker/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/
 
-# sudo docker compose -f docker-compose.yaml watch
+# 拡張機能「Get cookies.txt LOCALLY） > Export > 生成されるファイルをリネーム（youtube_cookies.txt）
+# youtube_cookies.txtをwhisper/youtube_cookies.txtに配置
 sudo docker compose up -d --build
 
 # お名前.comでドメインを用意する
@@ -99,9 +100,12 @@ sudo docker compose up -d --build
 # 「APIとサービス」 > 「認証情報」 > 「ウェブ アプリケーション」
 # 承認済みの JavaScript 生成元
 # 承認済みのリダイレクト URI
-# 拡張機能「Get cookies.txt LOCALLY） > Export > 生成されるファイルをリネーム（youtube_cookies.txt）
-# youtube_cookies.txtをwhisper/modules/libに配置
 ```
+
+```sh
+sudo docker compose down
+```
+
 
 ### EC2アプリケーションコード更新方法
 ```sh
@@ -204,6 +208,13 @@ npx create-next-app@latest . --typescript --tailwind --eslint
 cd ~/tool-transcription
 code .
 docker compose -f docker-compose.local.yaml watch
+
+yt-dlp --cookies /app/whisper/youtube_cookies.txt \
+  --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" \
+  --js-runtime node \
+  --remote-components ejs:github \
+  --cache-dir /tmp/yt-dlp-cache \
+  "https://www.youtube.com/shorts/BxDyDtU108c"
 ```
 
 ```sh

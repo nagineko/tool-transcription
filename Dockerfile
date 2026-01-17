@@ -20,6 +20,10 @@ RUN cd nextjs && npm install
 # アプリケーションコードのコピー
 COPY . .
 
+RUN mkdir -p /tmp/yt-dlp-cache /app/whisper/output && \
+    chown -R node:node /app /tmp/yt-dlp-cache && \
+    chmod -R 777 /tmp/yt-dlp-cache /app/whisper/output
+
 EXPOSE 3000
 # デフォルトは本番起動。Compose側で上書き可能。
 CMD ["npm", "--prefix", "nextjs", "start"]

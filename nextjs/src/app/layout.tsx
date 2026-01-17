@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Transcription Tool",
-  description: "YouTube to Text with Gemini",
+  title: "テールシステム",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({

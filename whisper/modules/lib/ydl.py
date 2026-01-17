@@ -1,57 +1,72 @@
-from yt_dlp import YoutubeDL
-import io
 import subprocess
 import os
-cookie_file = 'youtube_cookies.txt'
-print(f"DEBUG: Cookie file path: {os.path.abspath(cookie_file)}")
-print(f"DEBUG: Cookie file exists: {os.path.isfile(cookie_file)}")
+import io
+import json
+
 def download_as_stream(url):
-    # Cookieファイルのパス（絶対パスにするのが安全）
-    cookie_path = 'youtube_cookies.txt'
+    # 成功したコマンドと同じパスとパラメータを定義
+    cache_dir = '/tmp/yt-dlp-cache'
+    cookie_path = '/app/whisper/youtube_cookies.txt'
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'no_cookies': True,           # --no-cookies
-        'ignoreconfig': True,          # --ignore-config
-        'extractor_args': {            # --extractor-args "youtube:player_client=android"
-            'youtube': ['player_client=android']
-        },
-        'nocheckcertificate': True,
-        # 'cookiefile': cookie_path,
-        # 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        # 'nocheckcertificate': True,
-    }
+    # キャッシュディレクトリを念のため準備
+    os.makedirs(cache_dir, exist_ok=True)
+    os.chmod(cache_dir, 0o777)
 
-    # 1. メタデータのみ取得
-    with YoutubeDL(ydl_opts) as ydl:
-        meta = ydl.extract_info(url, download=False)
+    # 環境変数を継承
+    env = os.environ.copy()
+    env["PATH"] = f"/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
 
-    # 2. サブプロセスでyt-dlpを実行し、音声を標準出力(stdout)へ流す
-    # 外部コマンドとして実行することで、確実にバイナリをキャプチャします
-    command = [
+    # --- 1. メタデータ(JSON)をOSコマンドで取得 ---
+    # ここで meta['id'] を手に入れます
+    meta_command = [
         'yt-dlp',
-        '--no-cookies',                # Cookieを使わない
-        '--ignore-config',             # 設定ファイルを無視
-        '--extractor-args', 'youtube:player_client=android',
-        # '--cookies', cookie_path,
-        # '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        # '--impersonate', 'chrome',
-        '-x',                          # 音声のみ抽出
-        '--audio-format', 'mp3',       # mp3に変換
-        '--audio-quality', '0',        # 高音質
-        '-o', '-',                     # 標準出力に出力
-        '--quiet',
+        '--cookies', cookie_path,
+        '--user-agent', ua,
+        '--js-runtime', 'node',
+        '--remote-components', 'ejs:github',
+        '--cache-dir', cache_dir,
+        '--print-json',      # JSON形式で詳細情報を出力
+        '--skip-download',   # ここではまだダウンロードしない
+        url
+    ]
+    
+    meta_proc = subprocess.run(meta_command, capture_output=True, text=True, env=env)
+    if meta_proc.returncode != 0:
+        error_log = meta_proc.stderr
+        print(f"DEBUG: Metadata fetch failed. Log:\n{error_log}")
+        raise Exception(f"Metadata fetch failed: {error_log}")
+    
+    # 取得した文字列を辞書に変換
+    meta = json.loads(meta_proc.stdout)
+
+    # --- 2. 音声データ(Binary)をOSコマンドで取得 ---
+    # あなたが成功させたコマンドと全く同じパラメータです
+    audio_command = [
+        'yt-dlp',
+        '--cookies', cookie_path,
+        '--user-agent', ua,
+        '--js-runtime', 'node',
+        '--remote-components', 'ejs:github',
+        '--cache-dir', cache_dir,
+        '-x', '--audio-format', 'mp3',
+        '-o', '-',           # 標準出力へ
         url
     ]
 
-    # stdout=PIPEでバイナリをキャプチャ
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+        audio_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env
+    )
+
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        raise Exception(f"YouTubeからの音声取得に失敗しました。: {stderr.decode()}")
+        error_log = stderr.decode('utf-8', errors='ignore')
+        print(f"DEBUG: Audio download failed. Log:\n{error_log}")
+        raise Exception(f"yt-dlp failed with code {process.returncode}")
 
-    # 3. メモリ上のバイナリ(BytesIO)とメタデータを一緒に返す
-    audio_buffer = io.BytesIO(stdout)
-    return meta, audio_buffer
+    # 本物の meta 辞書と、音声データのバッファを返す
+    return meta, io.BytesIO(stdout)
